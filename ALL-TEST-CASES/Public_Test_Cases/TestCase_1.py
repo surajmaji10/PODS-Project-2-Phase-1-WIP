@@ -97,10 +97,8 @@ def test_get_wallet(user_id, response):
 
     # checking for the correct status code
     if(user_res.status_code != 404 and response.status_code == 404):
-	    return False
-
+        return False
     payload = response.json()
-
     # checking if 'user_id' field exists in response
     if ('user_id' not in payload):
         print("get_wallet() Failed: 'user_id' field not present in response.")

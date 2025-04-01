@@ -61,7 +61,9 @@ def update_order_status(order_id, status):
 
 def get_orders(user_id):  
     """Get all orders for a user."""  
-    response = requests.get(f"{MARKETPLACE_SERVICE_URL}/orders/users/{user_id}")  
+    print("HELLO")
+    response = requests.get(f"{MARKETPLACE_SERVICE_URL}/orders/users/{user_id}")
+    print("HELLO")  
     assert response.status_code == 200, "Failed to fetch orders"  
     return response.json()  
 
@@ -87,13 +89,13 @@ def test_order_flow(user_id, name, email, product_id, qty):
         print("User Created:", user_id, name, email)
         # Add money to the user's wallet  
         update_wallet(user_id, "credit", 1000000)  
-        print("Wallet Updated:", user_id, "credited with 1000000")
+        print(" =====> Wallet Updated:", user_id, "credited with 1000000")
         # Place an order  
         order_data = {"items": [{"product_id": product_id, "quantity": qty}], "user_id": user_id}  
         placed_order = place_order(order_data)  
         print("Placed Order: {}\n".format(placed_order["order_id"]), placed_order)  
 
-        # Verify the order is in "placed" state  
+        # Verify the order is in "placed" state 
         orders = get_orders(user_id) 
         print("All Orders:\n", orders)
 

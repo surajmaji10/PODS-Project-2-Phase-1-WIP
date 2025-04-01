@@ -31,7 +31,7 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
         super(context);
         api = new API();
         this.gateway = gateway;
-        this.askTimeout = Duration.ofSeconds(10);
+        this.askTimeout = Duration.ofSeconds(30);
         this.scheduler = context.getSystem().scheduler();
     }
 
@@ -253,17 +253,27 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                                         if (productInfoResponse.productStockQuantity < 0) {
                                             throw new RuntimeException("SOME ISSUE OCCURRED");
                                         }
-                                    });
+                                    }).exceptionally(ex -> {
+                                        System.out.println("FAILED......");
+                                        ex.printStackTrace();
+                                        return null;
+                                   });
                                 })
                                 .toList();
 
                         CompletableFuture.allOf(rollbackTasks.toArray(new CompletableFuture[0]))
-                                .thenRun(() -> replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "FAILED", 0, itemsToOrder, null)));
+                                .thenRun( () ->
+                                    {
+                                    System.out.println("Order is NOT");
+                                    replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "FAILED", 0, itemsToOrder, null));
+                                    }
+                                );
                         return;
                     }
 
                     // Final order status
                     if (!orderPlaceable.get()) {
+                        System.out.println("Order is NOT placeable");
                         replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "FAILED", 0, itemsToOrder, null));
                     } else {
                         // create order actor and save
@@ -272,7 +282,10 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                         getContext().getSelf().tell(new CreateOrderActor(orderId, userId, totalOrderPrice.get(), itemsToOrder, replyTo));
                         System.out.println("Order placed ......");
                     }
-                });
+                }).exceptionally(ex -> {
+                    ex.printStackTrace();
+                    return null;
+               });
 
         return this;
     }

@@ -6,6 +6,7 @@ me/akashmaj/demomarketplaceservice/Gateway$UpdateOrder.class
 me/akashmaj/demomarketplaceservice/Product$ProductUpdateRequest.class
 me/akashmaj/demomarketplaceservice/Gateway.class
 me/akashmaj/demomarketplaceservice/Product$Command.class
+me/akashmaj/demomarketplaceservice/MarketplaceHandler.class
 me/akashmaj/demomarketplaceservice/Gateway$PlaceOrder.class
 me/akashmaj/demomarketplaceservice/Order$Command.class
 me/akashmaj/demomarketplaceservice/Gateway$CancelOrder.class

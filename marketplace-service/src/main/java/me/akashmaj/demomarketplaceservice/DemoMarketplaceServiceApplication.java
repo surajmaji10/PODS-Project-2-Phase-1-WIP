@@ -23,6 +23,8 @@ import akka.actor.typed.javadsl.AskPattern;
 import akka.actor.typed.javadsl.Behaviors;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 @SpringBootApplication
 public class DemoMarketplaceServiceApplication {
@@ -35,6 +37,8 @@ public class DemoMarketplaceServiceApplication {
 
 
     public static void main(String[] args) {
+        Config config = ConfigFactory.load("application.conf");
+        System.out.println(config.getString("akka.actor.provider"));
 
         ActorSystem.create(DemoMarketplaceServiceApplication.create(), "DemoMarketplaceServiceApplication");
 
@@ -47,7 +51,7 @@ public class DemoMarketplaceServiceApplication {
             /* creating the root actor */
             system = ActorSystem.create(Gateway.create(), "Gateway");
             gateway = system;
-            askTimeout = Duration.ofSeconds(10);
+            askTimeout = Duration.ofSeconds(30);
             scheduler = system.scheduler();
 
 
@@ -61,7 +65,11 @@ public class DemoMarketplaceServiceApplication {
 
             MyOrdersHandler myOrdersHandler = new MyOrdersHandler(gateway, askTimeout, scheduler);
             server.createContext("/orders", myOrdersHandler);
-//
+
+            MarketplaceHandler marketplaceHandler = new MarketplaceHandler(gateway, askTimeout, scheduler);
+            server.createContext("/marketplace", marketplaceHandler);
+
+//  
 //            MyWalletsHandler myWalletsHandler = new MyWalletsHandler(gateway, askTimeout, scheduler);
 //            server.createContext("/wallets", myWalletsHandler);
 
@@ -73,11 +81,11 @@ public class DemoMarketplaceServiceApplication {
 
             // Inside the create() method
             ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                100, // Core pool size (minimum number of threads)
-                1000, // Maximum pool size (maximum number of threads)
-                10L, // Keep-alive time for idle threads
+                8, // Core pool size (minimum number of threads)
+                16, // Maximum pool size (maximum number of threads)
+                30L, // Keep-alive time for idle threads
                 TimeUnit.SECONDS, // Time unit for keep-alive time
-                new LinkedBlockingQueue<>() // Work queue for incoming requests
+                new LinkedBlockingQueue<>(1000) // Work queue for incoming requests
             );
 
             server.setExecutor(threadPoolExecutor);

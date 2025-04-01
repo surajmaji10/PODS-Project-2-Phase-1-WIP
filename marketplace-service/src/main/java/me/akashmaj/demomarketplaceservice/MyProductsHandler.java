@@ -120,8 +120,17 @@ class MyProductsHandler implements HttpHandler {
             }
         }
         else {
-            t.sendResponseHeaders(404, 0);
-            t.getResponseBody().close();
+            try {
+                String jsonResponse = "NOT Implemented for " + path;
+                t.getResponseHeaders().set("Content-Type", "application/json");
+                t.sendResponseHeaders(200, jsonResponse.length());
+        //                        t.getResponseHeaders().set("Content-Type", "application/json");
+                OutputStream os = t.getResponseBody();
+                os.write(jsonResponse.getBytes());
+                os.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

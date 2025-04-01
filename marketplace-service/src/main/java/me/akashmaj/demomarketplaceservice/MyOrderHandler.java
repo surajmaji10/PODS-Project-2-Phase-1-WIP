@@ -25,6 +25,9 @@ class MyOrdersHandler implements HttpHandler {
     public Duration askTimeout;
     public Scheduler scheduler;
 
+    public int requestsCount = 0;
+    public int responseCount = 0;
+
     public MyOrdersHandler(ActorRef<Gateway.Command> gateway, Duration askTimeout, Scheduler scheduler) {
         this.gateway = gateway;
         this.askTimeout = askTimeout;
@@ -77,7 +80,7 @@ class MyOrdersHandler implements HttpHandler {
 
         if (parts.length == 2 && parts[1].equals("orders") && m.equals("POST")) {
             try {
-
+                System.out.println(++requestsCount + " -----------------------------------------------------------------------------------------------------------------------------------------------------------------");
                 // read request body into a map
                 String requestBody = new String(t.getRequestBody().readAllBytes());
                 List<Map<String, Integer>> itemsToOrder = processOrderItems(requestBody);
@@ -91,9 +94,15 @@ class MyOrdersHandler implements HttpHandler {
                 );
 
                 compl.thenAccept(response -> {
-
+                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                System.out.println("Processing response for Order ID: " + response.orderId);
+                System.out.println("Response Count Before: " + responseCount);
+                responseCount++; // Increment response count
+                System.out.println("Response Count After: " + responseCount);
+                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 //                    String jsonResponse = String.format("{\"id\": %d, \"name\": \"%s\", \"price\": %d, \"stockQuantity\": %d}",
 //                            response.productId, response.productName, response.productPrice, response.productStockQuantity);
+                   
                     String jsonResponse = null;
                     try {
                         jsonResponse = response.toJson();
@@ -111,6 +120,7 @@ class MyOrdersHandler implements HttpHandler {
                         t.sendResponseHeaders(responseCode, jsonResponse.length());
                         OutputStream os = t.getResponseBody();
                         os.write(jsonResponse.getBytes());
+                        os.flush();
                         os.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -119,6 +129,7 @@ class MyOrdersHandler implements HttpHandler {
                 });
 
             } catch (NumberFormatException e) {
+                System.out.println("GETTING EXCEPTION............");
                 t.sendResponseHeaders(400, 0);
                 t.getResponseBody().close();
             }
@@ -243,7 +254,17 @@ class MyOrdersHandler implements HttpHandler {
             }
         }
         else {
-            t.sendResponseHeaders(404, 0);
+            try {
+                String jsonResponse = "NOT Implemented for " + path;
+                t.getResponseHeaders().set("Content-Type", "application/json");
+                t.sendResponseHeaders(200, jsonResponse.length());
+        //                        t.getResponseHeaders().set("Content-Type", "application/json");
+                OutputStream os = t.getResponseBody();
+                os.write(jsonResponse.getBytes());
+                os.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -36,6 +36,7 @@ def get_product_details(product_id):
 
 def delete_order(user_id):
     response = requests.delete(marketplaceServiceURL+f"/marketplace/users/{user_id}")
+    print(response, response.status_code)
     if response.status_code != 200:
         print("Wrong status code return during delete order")
         sys.exit()

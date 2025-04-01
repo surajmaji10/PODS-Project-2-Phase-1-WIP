@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.javadsl.*;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
@@ -94,7 +95,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             CompletionStage<OrderInfo> orderDetails = AskPattern.ask(
                     order.get(),
                     (ActorRef<OrderInfo> replyTo) -> new Order.UpdateOrder(updateOrder.orderId, updateOrder.status, replyTo),
-                    Duration.ofSeconds(3),
+                    Duration.ofSeconds(30),
                     getContext().getSystem().scheduler()
             );
 
@@ -135,7 +136,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             CompletionStage<OrderInfo> orderDetails = AskPattern.ask(
                     order.get(),
                     (ActorRef<OrderInfo> replyTo) -> new Order.GetOrder(cancelOrder.orderId, replyTo),
-                    Duration.ofSeconds(3),
+                    Duration.ofSeconds(30),
                     getContext().getSystem().scheduler()
             );
 
@@ -193,7 +194,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             CompletionStage<OrderInfo> orderDetails = AskPattern.ask(
                     order.get(),
                     (ActorRef<OrderInfo> replyTo) -> new Order.GetOrder(getOrder.orderId, replyTo),
-                    Duration.ofSeconds(3),
+                    Duration.ofSeconds(30),
                     getContext().getSystem().scheduler()
             );
 
@@ -254,7 +255,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             CompletionStage<ProductInfoResponse> productDetails = AskPattern.ask(
                     product.get(),
                     (ActorRef<ProductInfoResponse> replyTo) -> new Product.GetProductById(getProduct.productId, replyTo),
-                    Duration.ofSeconds(3),
+                    Duration.ofSeconds(30),
                     getContext().getSystem().scheduler()
             );
 
@@ -318,7 +319,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             CompletionStage<ProductInfoResponse> productDetails = AskPattern.ask(
                     product.get(),
                     (ActorRef<ProductInfoResponse> replyTo) -> new Product.ProductUpdateRequest(replyTo, updateProduct.productId, updateProduct.productStockQuantity),
-                    Duration.ofSeconds(3),
+                    Duration.ofSeconds(30),
                     getContext().getSystem().scheduler()
             );
 
@@ -419,7 +420,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         CompletionStage<OrderInfo> orderInfo = AskPattern.ask(
                 postOrderActor,
                 (ActorRef<OrderInfo> replyTo) -> new PostOrder.CreateOrder(orderIdCounter, placeOrder.userId, placeOrder.itemsToOrder, replyTo),
-                Duration.ofSeconds(3),
+                Duration.ofSeconds(30),
                 getContext().getSystem().scheduler()
         );
 
@@ -428,10 +429,13 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             try {
                 System.out.println(info.toJson());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                // throw new RuntimeException(e);
             }
             placeOrder.replyTo.tell(new OrderInfo(null, info.orderId, info.userId, info.orderStatus, info.totalPrice, info.itemsToOrder, null));
-        });
+        }).exceptionally(ex -> {
+            ex.printStackTrace();
+            return null;
+       });
 
         return this;
     }

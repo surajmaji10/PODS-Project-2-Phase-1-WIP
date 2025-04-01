@@ -18,7 +18,7 @@ MARKETPLACE_SERVICE_URL = "http://localhost:8081"
 
 # We'll track how many orders are successfully placed
 successful_orders = 0
-
+count = 0
 def place_order_thread(user_id, product_id, attempts=5):
         """
         Each thread attempts to place 'attempts' orders for the same product_id, quantity=1.
@@ -26,12 +26,14 @@ def place_order_thread(user_id, product_id, attempts=5):
         We also call test_post_order(...) to verify the response structure.
         """
         global successful_orders
+        global count
         try:
             for _ in range(attempts):
-                random.seed(time.time())
+                # random.seed(time.time())
                 quantity = random.randint(1, 3)
                 resp = post_order(user_id, [{"product_id": product_id, "quantity": quantity}])
-
+                count += 1
+                print(count, " ##########################################################################################################################################################")
                 if resp.status_code == 201:
                     if not test_post_order(user_id, [{"product_id": product_id, "quantity": quantity}], resp, True):
                         print_fail_message("test_post_order failed on success scenario.")
@@ -47,8 +49,8 @@ def place_order_thread(user_id, product_id, attempts=5):
 def main():
     try:
         # 2) Create user (large enough balance so they can buy many items)
-        user_id = 20000
-        resp = post_user(user_id, "Akash Maji", "akashmaji@iisc.ac.com")
+        user_id = 20001
+        resp = post_user(user_id, "Akash mMaji", "amkashmaji@iisc.ac.com")
         if not check_response_status_code(resp, 201):
             return False
 
@@ -58,7 +60,7 @@ def main():
             return False
 
         # 4) Check the product's initial stock
-        product_id = 101
+        product_id = 117
         initial_stock = 10  
         resp = get_product(product_id)
         if resp.status_code == 200:
@@ -70,7 +72,7 @@ def main():
         successful_orders = 0  # reset global
 
         thread_count = 10
-        attempts_per_thread = 5  # total = 15 attempts, but stock is only 10
+        attempts_per_thread = 3 # total = 30 attempts, but stock is only 10
         threads = []
 
         counter = 0
@@ -84,16 +86,18 @@ def main():
             }, name= name)
             threads.append(t)
 
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print(len(threads))
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         for t in threads:
             t.start()
             # time.sleep(1)
 
-        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-        print(len(threads))
+    
         print("I AM ENTERING===============================================>")
         for t in threads:
             print("*******************")
-            print(t.name)
+            print(f"Thread {t.name} has finished execution.")
             print("*******************")
             t.join()
         print("I AM LEAVING================================================>")

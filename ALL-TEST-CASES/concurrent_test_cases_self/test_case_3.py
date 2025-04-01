@@ -67,8 +67,8 @@ def main():
             return False
 
         # Step 3: Define multiple products with initial stock
-        product_ids = [101, 102, 103]  # Testing with 3 different products
-        initial_stock = {101: 10, 102: 8, 103: 15}  # Random initial stock (50-100)
+        product_ids = [118, 119, 120]  # Testing with 3 different products
+        initial_stock = {118: 14, 119: 8, 120: 15}  # Random initial stock (50-100)
         global successful_orders
         successful_orders = {pid: 0 for pid in product_ids}  # Reset tracking
 
