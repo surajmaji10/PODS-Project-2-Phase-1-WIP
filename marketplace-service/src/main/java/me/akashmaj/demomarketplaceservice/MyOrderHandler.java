@@ -74,13 +74,19 @@ class MyOrdersHandler implements HttpHandler {
         String path = t.getRequestURI().getPath();
         String m = t.getRequestMethod();
         System.out.println("MyOrdersHandler PATH: " + path);
-
         String[] parts = path.split("/");
         System.out.println("MyOrdersHandler PATH Length: " + parts.length);
 
         if (parts.length == 2 && parts[1].equals("orders") && m.equals("POST")) {
             try {
-                System.out.println(++requestsCount + " -----------------------------------------------------------------------------------------------------------------------------------------------------------------");
+
+                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                System.out.println("Processing request for Request No: " + requestsCount);
+                System.out.println("Request Count Before: " + requestsCount);
+                requestsCount++; 
+                System.out.println("Request Count After: " + requestsCount);
+                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                
                 // read request body into a map
                 String requestBody = new String(t.getRequestBody().readAllBytes());
                 List<Map<String, Integer>> itemsToOrder = processOrderItems(requestBody);
@@ -94,15 +100,13 @@ class MyOrdersHandler implements HttpHandler {
                 );
 
                 compl.thenAccept(response -> {
-                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++++++++++");
                 System.out.println("Processing response for Order ID: " + response.orderId);
                 System.out.println("Response Count Before: " + responseCount);
                 responseCount++; // Increment response count
                 System.out.println("Response Count After: " + responseCount);
-                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-//                    String jsonResponse = String.format("{\"id\": %d, \"name\": \"%s\", \"price\": %d, \"stockQuantity\": %d}",
-//                            response.productId, response.productName, response.productPrice, response.productStockQuantity);
-                   
+                System.out.println( "++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
                     String jsonResponse = null;
                     try {
                         jsonResponse = response.toJson();
@@ -126,10 +130,14 @@ class MyOrdersHandler implements HttpHandler {
                         e.printStackTrace();
                     }
 
-                });
+                }).exceptionally(ex -> {
+                    Color.red("Exception in Gateway.PlaceOrder()");
+                    ex.printStackTrace();
+                    return null;
+               });
 
             } catch (NumberFormatException e) {
-                System.out.println("GETTING EXCEPTION............");
+                Color.red("Getting EXCEPTION: Order POST");
                 t.sendResponseHeaders(400, 0);
                 t.getResponseBody().close();
             }
@@ -138,13 +146,14 @@ class MyOrdersHandler implements HttpHandler {
             try {
 
                 int orderId = Integer.parseInt(parts[2]);
-                System.out.println(orderId);
+                // System.out.println(orderId);
 
                 // read request body into a map
                 String requestBody = new String(t.getRequestBody().readAllBytes());
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readTree(requestBody);
                 String status = jsonNode.get("status").asText();
+
                 CompletionStage<Gateway.OrderInfo> compl = AskPattern.ask(
                         gateway,
                         (ActorRef<Gateway.OrderInfo> ref) -> new Gateway.UpdateOrder(orderId, status , ref),
@@ -171,6 +180,7 @@ class MyOrdersHandler implements HttpHandler {
                         e.printStackTrace();
                     }
                 });
+
             }catch (Exception e) {
                 t.sendResponseHeaders(400, 0);
                 t.getResponseBody().close();
@@ -180,7 +190,7 @@ class MyOrdersHandler implements HttpHandler {
             try {
 
                 int orderId = Integer.parseInt(parts[2]);
-                System.out.println(orderId);
+                // System.out.println(orderId);
 
                 CompletionStage<Gateway.OrderInfo> compl = AskPattern.ask(
                         gateway,
@@ -199,7 +209,6 @@ class MyOrdersHandler implements HttpHandler {
                     }
                     try {
                         t.getResponseHeaders().set("Content-Type", "application/json");
-//                        t.sendResponseHeaders(200, jsonResponse.length());
                         t.getResponseHeaders().set("Content-Type", "application/json");
                         OutputStream os = t.getResponseBody();
                         os.write(jsonResponse.getBytes());
@@ -219,8 +228,8 @@ class MyOrdersHandler implements HttpHandler {
             try {
 
                 int orderId = Integer.parseInt(parts[2]);
-                System.out.println(orderId);
-
+                // System.out.println(orderId);
+                
                 CompletionStage<Gateway.OrderInfo> compl = AskPattern.ask(
                         gateway,
                         (ActorRef<Gateway.OrderInfo> ref) -> new Gateway.CancelOrder(orderId, null, ref),
@@ -239,7 +248,6 @@ class MyOrdersHandler implements HttpHandler {
                     try {
                         t.getResponseHeaders().set("Content-Type", "application/json");
                         t.sendResponseHeaders(200, jsonResponse.length());
-//                        t.getResponseHeaders().set("Content-Type", "application/json");
                         OutputStream os = t.getResponseBody();
                         os.write(jsonResponse.getBytes());
                         os.close();
@@ -258,7 +266,6 @@ class MyOrdersHandler implements HttpHandler {
                 String jsonResponse = "NOT Implemented for " + path;
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 t.sendResponseHeaders(200, jsonResponse.length());
-        //                        t.getResponseHeaders().set("Content-Type", "application/json");
                 OutputStream os = t.getResponseBody();
                 os.write(jsonResponse.getBytes());
                 os.close();

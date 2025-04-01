@@ -39,7 +39,7 @@ class MyProductsHandler implements HttpHandler {
             try {
 
                 int productId = Integer.parseInt(parts[2]);
-                System.out.println(productId);
+                // System.out.println(productId);
 
                 CompletionStage<Gateway.ProductInfoResponse> compl = AskPattern.ask(
                         gateway,
@@ -50,8 +50,7 @@ class MyProductsHandler implements HttpHandler {
 
                 compl.thenAccept(response -> {
 
-//                    String jsonResponse = String.format("{\"id\": %d, \"name\": \"%s\", \"price\": %d, \"stockQuantity\": %d}",
-//                            response.productId, response.productName, response.productPrice, response.productStockQuantity);
+
                     String jsonResponse = null;
                     try {
                         jsonResponse = response.toJson();
@@ -63,7 +62,6 @@ class MyProductsHandler implements HttpHandler {
                     try {
                         t.getResponseHeaders().set("Content-Type", "application/json");
                         t.sendResponseHeaders(200, jsonResponse.length());
-//                        t.getResponseHeaders().set("Content-Type", "application/json");
                         OutputStream os = t.getResponseBody();
                         os.write(jsonResponse.getBytes());
                         os.close();
@@ -82,7 +80,7 @@ class MyProductsHandler implements HttpHandler {
 
                 int productId = Integer.parseInt(parts[2]);
                 int stockQuantity = Integer.parseInt(parts[3]);
-                System.out.println(productId);
+                // System.out.println(productId);
 
                 CompletionStage<Gateway.ProductInfoResponse> compl = AskPattern.ask(
                         gateway,
@@ -104,7 +102,6 @@ class MyProductsHandler implements HttpHandler {
                     try {
                         t.getResponseHeaders().set("Content-Type", "application/json");
                         t.sendResponseHeaders(200, jsonResponse.length());
-//                        t.getResponseHeaders().set("Content-Type", "application/json");
                         OutputStream os = t.getResponseBody();
                         os.write(jsonResponse.getBytes());
                         os.close();
@@ -124,7 +121,6 @@ class MyProductsHandler implements HttpHandler {
                 String jsonResponse = "NOT Implemented for " + path;
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 t.sendResponseHeaders(200, jsonResponse.length());
-        //                        t.getResponseHeaders().set("Content-Type", "application/json");
                 OutputStream os = t.getResponseBody();
                 os.write(jsonResponse.getBytes());
                 os.close();

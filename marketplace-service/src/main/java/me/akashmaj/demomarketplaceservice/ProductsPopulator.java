@@ -69,9 +69,10 @@ public class ProductsPopulator {
 
                 products += 1;
             }
-            System.out.printf("Products Populated Successfully");
+            Color.green("Products Populated Successfully");
             workbook.close();
         } catch (IOException e) {
+            Color.red("Products Populating Exception");
             e.printStackTrace();
         }
     }

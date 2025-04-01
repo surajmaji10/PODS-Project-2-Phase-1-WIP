@@ -63,8 +63,8 @@ def main():
         
         # Create multiple users and initialize their wallets
         for i in range(USER_COUNT):
-            user_id = 10000 + i  # Unique user IDs
-            resp = post_user(user_id, f"User_{user_id}", f"user{user_id}@test.com")
+            user_id = 12345 + i  # Unique user IDs
+            resp = post_user(user_id, f"New_User_{user_id}", f"new_user{user_id}@test.com")
             if not check_response_status_code(resp, 201):
                 return False
 

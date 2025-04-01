@@ -28,7 +28,8 @@ public class API {
     static public boolean getUserDiscountById(Integer user_id, boolean discountCheck) {
 
         String url = accountServiceUrl + "/users/" + user_id;
-        System.out.println("CHECK URL: " + url);
+        // System.out.println("CHECK URL: " + url);
+        Color.purple(" >>>>   CHECK URL: [ %s ] <<<<", url);
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(null, null);
 
@@ -57,6 +58,7 @@ public class API {
             }
             return false;
         } catch (RestClientException e) {
+            Color.red("Exception contacting User APIs");
             System.out.println(e.getMessage());
             return false;
         }
@@ -65,7 +67,8 @@ public class API {
     static public String getUserById(Integer user_id) {
 
         String url = accountServiceUrl + "/users/" + user_id;
-        System.out.println("CHECK URL: " + url);
+        // System.out.println("CHECK URL: " + url);
+        Color.purple(" >>>>   CHECK URL: [ %s ] <<<<", url);
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(null, null);
 
@@ -96,6 +99,7 @@ public class API {
                 }
             }
         } catch (RestClientException e) {
+            Color.red("Exception contacting User APIs");
             System.out.println(e.getMessage());
         }
         return "";
@@ -104,7 +108,8 @@ public class API {
     static public String getUserWalletById(Integer user_id) {
 
         String url = walletServiceUrl + "/wallets/" + user_id;
-        System.out.println("CHECK URL: " + url);
+        // System.out.println("CHECK URL: " + url);
+        Color.purple(" >>>>   CHECK URL: [ %s ] <<<<", url);
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(null, null);
 
@@ -134,6 +139,7 @@ public class API {
                 }
             }
         } catch (RestClientException e) {
+            Color.red("Exception contacting Wallet APIs");
             System.out.println(e.getMessage());
         }
         return "";
@@ -142,7 +148,8 @@ public class API {
 
     public static Integer getUserBalanceById(Integer user_id) {
         String url =  walletServiceUrl + "/wallets/" + user_id;
-        System.out.println("CHECK URL: "+ url);
+        // System.out.println("CHECK URL: "+ url);
+        Color.purple(" >>>>   CHECK URL: [ %s ] <<<<", url);
 
         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(null, null);
 
@@ -167,6 +174,7 @@ public class API {
 
         }
         catch (RestClientException e) {
+            Color.red("Exception contacting Wallet APIs");
             System.out.println(e.getMessage());
         }
         return -1;
@@ -174,7 +182,8 @@ public class API {
 
     public static boolean updateUserDiscount(Integer userId, boolean discountAvailed) {
         String url = accountServiceUrl + "/users";
-        System.out.println("CHECK URL: "+ url);
+        // System.out.println("CHECK URL: "+ url);
+        Color.purple(" >>>>   CHECK URL: [ %s ] <<<<", url);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -191,6 +200,7 @@ public class API {
                 return true;
             }
         } catch (RestClientException e) {
+            Color.red("Exception contacting User APIs");
             System.out.println(e.getMessage());
         }
         return false;
@@ -205,7 +215,8 @@ public class API {
 
     public static boolean updateUserWallet(Integer userId, Integer totalOrderPrice, String action) {
         String url = walletServiceUrl + "/wallets/" + userId;
-        System.out.println("CHECK URL: "+ url);
+        // System.out.println("CHECK URL: "+ url);
+        Color.purple(" >>>>   CHECK URL: [ %s ] <<<<", url);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -222,6 +233,7 @@ public class API {
                 return true;
             }
         } catch (RestClientException e) {
+            Color.red("Exception contacting Wallet APIs");
             System.out.println(e.getMessage());
         }
         return false;

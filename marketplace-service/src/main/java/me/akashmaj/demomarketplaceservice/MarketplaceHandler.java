@@ -40,7 +40,6 @@ class MarketplaceHandler implements HttpHandler {
                 String jsonResponse = "GET NOT Implemented for /marketplace/users/{id}";
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 t.sendResponseHeaders(200, jsonResponse.length());
-        //                        t.getResponseHeaders().set("Content-Type", "application/json");
                 OutputStream os = t.getResponseBody();
                 os.write(jsonResponse.getBytes());
                 os.close();
@@ -53,7 +52,6 @@ class MarketplaceHandler implements HttpHandler {
                 String jsonResponse = "DELETE NOT Implemented for /marketplace/users/{id}";
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 t.sendResponseHeaders(200, jsonResponse.length());
-        //                        t.getResponseHeaders().set("Content-Type", "application/json");
                 OutputStream os = t.getResponseBody();
                 os.write(jsonResponse.getBytes());
                 os.close();
@@ -66,7 +64,6 @@ class MarketplaceHandler implements HttpHandler {
                 String jsonResponse = "PUT NOT Implemented for /marketplace/users/{id}";
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 t.sendResponseHeaders(200, jsonResponse.length());
-        //                        t.getResponseHeaders().set("Content-Type", "application/json");
                 OutputStream os = t.getResponseBody();
                 os.write(jsonResponse.getBytes());
                 os.close();
@@ -81,7 +78,6 @@ class MarketplaceHandler implements HttpHandler {
                 String jsonResponse = "NOT Implemented for " + path;
                 t.getResponseHeaders().set("Content-Type", "application/json");
                 t.sendResponseHeaders(200, jsonResponse.length());
-        //                        t.getResponseHeaders().set("Content-Type", "application/json");
                 OutputStream os = t.getResponseBody();
                 os.write(jsonResponse.getBytes());
                 os.close();

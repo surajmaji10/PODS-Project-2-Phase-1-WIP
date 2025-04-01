@@ -47,112 +47,6 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                 .build();
     }
 
-//    private Behavior<PostOrder.Command> onCreateOrder(PostOrder.CreateOrder createOrder) {
-//
-//        Integer orderId = createOrder.orderId;
-//        Integer userId = createOrder.userId;
-//        List<Map<String, Integer>> itemsToOrder = createOrder.itemsToOrder;
-//        ActorRef<Gateway.OrderInfo> replyTo = createOrder.replyTo;
-//
-//        AtomicBoolean orderPlaceable = new AtomicBoolean(true);
-//        AtomicReference<Integer> totalOrderPrice = new AtomicReference<>(0);
-//
-//        // for each product check availability
-//        for (Map<String, Integer> item : itemsToOrder) {
-//            Integer productId = item.get("product_id");
-//            Integer quantity = item.get("quantity");
-//
-//            System.out.println("Product ID => " + productId);
-//            System.out.println("Quantity => " + quantity);
-//
-//            CompletionStage<Gateway.ProductInfoResponse> compl = AskPattern.ask(
-//                    gateway,
-//                    (ActorRef<Gateway.ProductInfoResponse> ref) -> new Gateway.UpdateProduct(ref, productId, -1 * quantity),
-//                    askTimeout,
-//                    scheduler
-//            );
-//
-//            compl.thenAccept(productInfoResponse -> {
-//                System.out.println("CURRENT STOCK for Product " + productId + " => " + productInfoResponse.productStockQuantity);
-//                if (productInfoResponse.productStockQuantity < 0) {
-//                    System.out.println("SET FALSE");
-//                    orderPlaceable.set(false);
-//                }
-//                totalOrderPrice.updateAndGet(v -> v + productInfoResponse.productPrice * quantity);
-//            });
-//
-//        }
-//
-//        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-//        System.out.println("PLACEABLE:" + orderPlaceable.get());
-//        if(!orderPlaceable.get()) {
-//            System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
-//            for (Map<String, Integer> item : itemsToOrder) {
-//                Integer productId = item.get("product_id");
-//                Integer quantity = item.get("quantity");
-//
-//                CompletionStage<Gateway.ProductInfoResponse> compl = AskPattern.ask(
-//                        gateway,
-//                        (ActorRef<Gateway.ProductInfoResponse> ref) -> new Gateway.UpdateProduct(ref, productId, quantity),
-//                        askTimeout,
-//                        scheduler
-//                );
-//
-//                compl.thenAccept(productInfoResponse -> {
-//                    System.out.println("RESTORED for ProductID:" + productId + "=>" + productInfoResponse.productStockQuantity);
-//                    if (productInfoResponse.productStockQuantity < 0) {
-//                        throw new RuntimeException("SOME ISSUE OCCURED");
-//                    }
-//                });
-//
-//            }
-//
-//        }
-//
-//        // contact user api and wallet api to check
-//        // if user exists and has enough balance
-//        String user = API.getUserById(userId);
-//        if(user.equals("")){
-//            System.out.println("SET FALSE");
-//            orderPlaceable.set(false);
-//        }
-//        String wallet = API.getUserWalletById(userId);
-//        if(wallet.equals("")){
-//            System.out.println("SET FALSE");
-//            orderPlaceable.set(false);
-//        }
-//
-//        Integer balanceUser =  API.getUserBalanceById(userId);
-//        if(balanceUser < totalOrderPrice.get()){
-//            orderPlaceable.set(false);
-//        }
-//        Boolean discountAvailed = API.getUserDiscountById(userId, true);
-//        if(!discountAvailed){
-//            totalOrderPrice.updateAndGet(v -> v * 90 / 100);
-//        }
-//
-//        Boolean walletUpdated = API.updateUserWallet(userId, totalOrderPrice.get(), "debit");
-//        Boolean discountTaken = API.updateUserDiscount(userId, true);
-//
-//        if(!walletUpdated || !discountTaken){
-//            System.out.println("SET FALSE");
-//            orderPlaceable.set(false);
-//            if(walletUpdated){
-//                API.updateUserWallet(userId, totalOrderPrice.get(), "credit");
-//            }
-//            if(discountTaken){
-//                API.updateUserDiscount(userId, false);
-//            }
-//        }
-//
-//        if(!orderPlaceable.get()) {
-//            replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "FAILED" ,0, itemsToOrder));
-//        }else{
-//            replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "PLACED" ,totalOrderPrice.get(), itemsToOrder));
-//        }
-//        return this;
-//    }
-
     private Behavior<PostOrder.Command> onCreateOrder(PostOrder.CreateOrder createOrder) {
         Integer orderId = createOrder.orderId;
         Integer userId = createOrder.userId;
@@ -179,11 +73,15 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                     ).thenAccept(productInfoResponse -> {
                         System.out.println("> CURRENT STOCK for Product " + productId + " on orderID:" + orderId +" => " + productInfoResponse.productStockQuantity);
                         if (productInfoResponse.productStockQuantity < 0) {
-                            System.out.println("SET FALSE");
+                            Color.red("SET FALSE: onCreateOrder():UpdateProduct()");
                             orderPlaceable.set(false);
                         }
                         totalOrderPrice.updateAndGet(v -> v + productInfoResponse.productPrice * quantity);
-                    });
+                    }).exceptionally(ex -> {
+                        Color.red("Exception in PostOrder.onCreateOrder().Gateway.UpdateProduct");
+                        ex.printStackTrace();
+                        return null;
+                   });
                 })
                 .toList();
 
@@ -191,19 +89,20 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
         CompletableFuture.allOf(updateStockTasks.toArray(new CompletableFuture[0]))
                 .thenRun(() -> {
                     System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                    System.out.println("PLACEABLE: " + orderPlaceable.get());
+                    System.out.println("Order PLACEABLE: " + orderPlaceable.get() + ": OrderID:" + orderId);
+                    System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
                     if(orderPlaceable.get()){
                         // Contact user API and wallet API to check user existence and balance
                         String user = API.getUserById(userId);
                         if (user.isEmpty()) {
-                            System.out.println("SET FALSE");
+                            Color.red("SET FALSE: onCreateOrder():getUserById()");
                             orderPlaceable.set(false);
                         }
 
                         String wallet = API.getUserWalletById(userId);
                         if (wallet.isEmpty()) {
-                            System.out.println("SET FALSE");
+                            Color.red("SET FALSE: onCreateOrder():getUserWalletById()");
                             orderPlaceable.set(false);
                         }
 
@@ -221,7 +120,7 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                         Boolean discountTaken = API.updateUserDiscount(userId, true);
 
                         if (!walletUpdated || !discountTaken) {
-                            System.out.println("SET FALSE");
+                            Color.red("SET FALSE: onCreateOrder():updateUserWallet()updateUserDiscount");
                             orderPlaceable.set(false);
 
                             // Rollback wallet and discount if something goes wrong
@@ -236,8 +135,10 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
 
                     if (!orderPlaceable.get()) {
                         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
+                        System.out.println(" >>> PUTTING IT BACK FOR OrderID:" + orderId);
+                        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++=");
+                        
                         // Rollback stock if order is not placeable
-                        System.out.println("PUTTING IT BACK FOR orderID ================================================================>" + orderId);
                         List<CompletionStage<Void>> rollbackTasks = itemsToOrder.stream()
                                 .map(item -> {
                                     Integer productId = item.get("product_id");
@@ -251,10 +152,10 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                                     ).thenAccept(productInfoResponse -> {
                                         System.out.println("RESTORED for ProductID: " + productId + " => " + productInfoResponse.productStockQuantity);
                                         if (productInfoResponse.productStockQuantity < 0) {
-                                            throw new RuntimeException("SOME ISSUE OCCURRED");
+                                            throw new RuntimeException("?? Critical Issue: Gateway.UpdateProduct() thenAccept??");
                                         }
                                     }).exceptionally(ex -> {
-                                        System.out.println("FAILED......");
+                                        Color.red("?? Exception in rollback: UpdateProduct() ??");
                                         ex.printStackTrace();
                                         return null;
                                    });
@@ -264,7 +165,7 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
                         CompletableFuture.allOf(rollbackTasks.toArray(new CompletableFuture[0]))
                                 .thenRun( () ->
                                     {
-                                    System.out.println("Order is NOT");
+                                    Color.red("############### Order is NOT placeable for OrderID:%d ###############", orderId);
                                     replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "FAILED", 0, itemsToOrder, null));
                                     }
                                 );
@@ -273,16 +174,17 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
 
                     // Final order status
                     if (!orderPlaceable.get()) {
-                        System.out.println("Order is NOT placeable");
+                        Color.red("############### Order is NOT placeable for OrderID:%d ###############", orderId);
                         replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "FAILED", 0, itemsToOrder, null));
                     } else {
                         // create order actor and save
-                        System.out.println("Order is placeable");
+                        Color.green("############### Order is placeable for OrderID:%d ###############", orderId);
 //                        replyTo.tell(new Gateway.OrderInfo(null, orderId, userId, "PLACED", totalOrderPrice.get(), itemsToOrder, order));
                         getContext().getSelf().tell(new CreateOrderActor(orderId, userId, totalOrderPrice.get(), itemsToOrder, replyTo));
-                        System.out.println("Order placed ......");
+                        Color.green(">>>>>> Order is placed for OrderID:%d <<<<<<<", orderId);
                     }
                 }).exceptionally(ex -> {
+                    Color.red("?? Exception in rollback: Wait for all stock update requests ??");
                     ex.printStackTrace();
                     return null;
                });
@@ -328,7 +230,7 @@ public class PostOrder extends AbstractBehavior<PostOrder.Command> {
 
             createOrderActor.replyTo.tell(new Gateway.OrderInfo(null, createOrderActor.orderId, createOrderActor.userId, "PLACED", createOrderActor.totalOrderPrice, createOrderActor.itemsToOrder, order));
         } catch (Exception e) {
-            System.err.println("Error while creating order actor: " + e.getMessage());
+            Color.red("Exception in onCreateOrderActor() for OrderID: %d", createOrderActor.orderId);
             e.printStackTrace();
         }
         return this;

@@ -25,7 +25,7 @@ public class Order extends AbstractBehavior<Order.Command> {
         this.status = status;
         this.totalPrice = totalPrice;
         this.itemsToOrder = itemsToOrder;
-       System.out.println("INIT");
+        Color.purple("> Init OrderID: %d", orderId);
     }
 
     public static Behavior<Command> create(Integer orderId, Integer userId, String placed, Integer integer, List<Map<String, Integer>> itemsToOrder) {
@@ -41,6 +41,8 @@ public class Order extends AbstractBehavior<Order.Command> {
         return newReceiveBuilder()
                 .onMessage(GetOrder.class, this::onGetOrder)
                 .onMessage(UpdateOrder.class, this::onUpdateOrder)
+                .onMessage(DeleteOrder.class, this::onDeleteOrder)
+
                 .build();
     }
 
@@ -49,6 +51,7 @@ public class Order extends AbstractBehavior<Order.Command> {
         String status = updateOrder.status;
         ActorRef<Gateway.OrderInfo> replyTo = updateOrder.replyTo;
         if(this.status.equals("DELIVERED") || this.status.equals("CANCELLED")){
+            Color.red("Bad Request for OrderID: %d in onUpdateOrder()", orderId);
 
         }else if(this.status.equals("PLACED") && (status.equals("CANCELLED") || status.equals("DELIVERED"))){
             this.status = status;
@@ -89,5 +92,17 @@ public class Order extends AbstractBehavior<Order.Command> {
         return this;
     }
 
-
+    public static class DeleteOrder implements Command {
+        public final Integer orderId;
+    
+        public DeleteOrder(Integer orderId) {
+            this.orderId = orderId;
+        }
+    }
+    
+    private Behavior<Command> onDeleteOrder(DeleteOrder deleteOrder) {
+        Color.blue("Order deleted: " + deleteOrder.orderId);
+        return Behaviors.stopped();
+    }
+    
 }

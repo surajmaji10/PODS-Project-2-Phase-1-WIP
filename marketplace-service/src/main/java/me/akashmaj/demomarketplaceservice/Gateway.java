@@ -18,21 +18,26 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
 
     /* will store productId to product ActorRef mapping */
     public Map<Integer, ActorRef<Product.Command>> productsRef;
+
+    /* will point to the PostOrder actor that spawns children Order actors */
     public ActorRef<PostOrder.Command> postOrderActor;
 
     /* will help to populate the product actors from excel file*/
     ProductsPopulator productsPopulator;
 
+    /* since no db is used, we use these internal states for orders and orderitems */
     public Integer orderIdCounter = 2222;
     public Integer orderItemsCounter = 4444;
 
-    public Map<Integer, ActorRef<Order.Command>> orderActorsRef;
+    /* actorrefs to the order actors so created are being saved */
+    public static Map<Integer, ActorRef<Order.Command>> orderActorsRef;
 
     public static Behavior<Gateway.Command> create() {
         return Behaviors.setup(Gateway::new);
     }
 
     private Gateway(ActorContext<Command> context) {
+
         super(context);
 
         postOrderActor = context.spawn(PostOrder.create(getContext().getSelf()), "PostOrderActor");
@@ -41,6 +46,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         productsPopulator = new ProductsPopulator();
         productsPopulator.processExcelFile();
 
+        /* populate the products from excel file */
         for(int i = 0; i < productsPopulator.products; i++) {
             Integer productId = productsPopulator.productIds.get(i);
             String productName = productsPopulator.productNames.get(i);
@@ -48,16 +54,21 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             Integer productPrice = productsPopulator.productPrices.get(i);
             Integer productStockQuantity = productsPopulator.productStockQuantitys.get(i);
 
-            ActorRef<Product.Command> productActor = context.spawn(Product.create(productId, productName, productDescription, productPrice, productStockQuantity), "Product-" + productId);
+            ActorRef<Product.Command> productActor = context.spawn(
+                    Product.create(productId, productName, productDescription, productPrice, productStockQuantity), 
+                    "Product-" + productId
+                );
             productsRef.put(productId, productActor);
         }
     }
 
     private Behavior<Command> onSaveOrder(SaveOrder saveOrder) {
         orderActorsRef.put(saveOrder.orderId, saveOrder.orderRef);
-        System.out.println("SAVED TO STATE");
+        // System.out.println("SAVED TO INTERNAL STATE: OrderID:" + saveOrder.orderId);
+        Color.cyan("SAVED TO INTERNAL STATE: OrderID: %d", saveOrder.orderId);
         return this;
     }
+
     @Override
     public Receive<Command> createReceive() {
         return newReceiveBuilder()
@@ -70,6 +81,10 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
                 .onMessage(SaveOrder.class, this::onSaveOrder)
                 .onMessage(CancelOrder.class, this::onCancelOrder)
                 .onMessage(UpdateOrder.class, this::onUpdateOrder)
+                .onMessage(GetProductRef.class, this::onGetProductRef)
+                .onMessage(DeleteOrder.class, this::onDeleteOrder)
+
+
                 .build();
     }
 
@@ -89,7 +104,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         Optional<ActorRef<Order.Command>> order = Optional.ofNullable(orderActorsRef.get(updateOrder.orderId));
 
         if (order.isPresent()) {
-            System.out.println("onUpdateOrder");
+            // System.out.println("Inside onUpdateOrder()");
+            Color.blue("Inside onUpdateOrder()");
 
             // Ask the product actor for its details
             CompletionStage<OrderInfo> orderDetails = AskPattern.ask(
@@ -100,14 +116,18 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             );
 
             orderDetails.thenAccept(info -> {
-                System.out.println("INSIDE");
+                // System.out.println("INSIDE");
+                Color.blue("Inside onUpdateOrder() thenAccept");
+
                 updateOrder.replyTo.tell(info);
+
 //              updateOrder.replyTo.tell(new OrderInfo(null, info.orderId, info.userId, info.orderStatus, info.totalPrice, info.itemsToOrder, null));
 
             });
 
         } else {
-            System.out.println("Why this?");
+            // System.out.println("I should not be coming here if order is valid");
+            Color.red("I should not be coming here if order is valid: onUpdateOrder()");
             updateOrder.replyTo.tell(new OrderInfo(null, -1, -1, "Not Found", 0, null, null));
         }
 
@@ -130,7 +150,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         Optional<ActorRef<Order.Command>> order = Optional.ofNullable(orderActorsRef.get(cancelOrder.orderId));
 
         if (order.isPresent()) {
-            System.out.println("onCancelOrder");
+            // System.out.println("Inside onCancelOrder()");
+            Color.blue("Inside onCancelOrder()");
             cancelOrder.orderRef = order.get();
             // Ask the product actor for its details
             CompletionStage<OrderInfo> orderDetails = AskPattern.ask(
@@ -141,7 +162,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             );
 
             orderDetails.thenAccept(info -> {
-                System.out.println("INSIDE onCancelOrder");
+                // System.out.println("INSIDE onCancelOrder");
+                Color.blue("Inside onCancelOrder() thenAccept");
 
                 if(info.orderStatus.equals("CANCELLED") || info.orderStatus.equals("DELIVERED")) {
                     cancelOrder.replyTo.tell(new OrderInfo(null, info.orderId, info.userId, info.orderStatus, info.totalPrice, info.itemsToOrder, null));
@@ -154,15 +176,17 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
                     productsRef.get(productId).tell(new Product.ProductUpdateRequest(null, productId, quantity));
 //                    API.updateUserWallet(info.userId, info.totalPrice, "credit");
 
-
                 });
+
                 API.updateUserWallet(info.userId, info.totalPrice, "credit");
                 order.get().tell(new Order.UpdateOrder(info.orderId, "CANCELLED", null));
                 cancelOrder.replyTo.tell(new OrderInfo(null, info.orderId, info.userId, "CANCELLED", info.totalPrice, info.itemsToOrder, null));
+            
             });
 
         } else {
-            System.out.println("Why this?");
+            // System.out.println("Why this?");
+            Color.red("I should not be coming here if order is valid: onCancelOrder()");
             cancelOrder.replyTo.tell(new OrderInfo(null, -1, -1, "Not Found", 0, null, null));
         }
 
@@ -188,7 +212,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         Optional<ActorRef<Order.Command>> order = Optional.ofNullable(orderActorsRef.get(getOrder.orderId));
 
         if (order.isPresent()) {
-            System.out.println("onGetOrder");
+            // System.out.println("Inside onGetOrder()");
+            Color.blue("Inside onGetOrder()");
 
             // Ask the product actor for its details
             CompletionStage<OrderInfo> orderDetails = AskPattern.ask(
@@ -199,12 +224,14 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             );
 
             orderDetails.thenAccept(info -> {
-                System.out.println("INSIDE");
+                // System.out.println("Inside onGetOrder() thenAccept");
+                Color.blue("Inside onGetOrder()");
                 getOrder.replyTo.tell(new OrderInfo(null, info.orderId, info.userId, info.orderStatus, info.totalPrice, info.itemsToOrder, null));
             });
 
         } else {
-            System.out.println("Why this?");
+            // System.out.println("Why this?");
+            Color.red("I should not be coming here if order is valid: onGetOrder()");
             getOrder.replyTo.tell(new OrderInfo(null, -1, -1, "Not Found", 0, null, null));
         }
 
@@ -230,7 +257,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         System.out.println("Order Status: " + orderInfo.orderStatus);
         System.out.println("Items to Order: " + orderInfo.itemsToOrder);
         if(orderInfo.orderStatus.equals("PLACED")) {
-            System.out.println("Order is placed ))))))))))))))))))))))))))))))))))))))");
+            Color.green("Order is placed: OrderID: %d", orderInfo.orderId);
             orderActorsRef.put(orderInfo.orderId, orderInfo.orderCreated );
         }
         return this;
@@ -238,18 +265,12 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
 
 
     private Behavior<Command> onGetProduct(GetProduct getProduct) {
+
         Optional<ActorRef<Product.Command>> product = Optional.ofNullable(productsRef.get(getProduct.productId));
 
-//        if (product.isPresent()) {
-//            System.out.println("Product with ID: " + getProduct.productId + " found");
-//            product.get().tell(new Product.ProductInfoRequest(getContext().getSelf(), getProduct.productId));
-//
-//        } else {
-//            getProduct.replyTo.tell(new ProductInfoResponse(null, -1, "Not Found", "Not Found", -1, -1 ));
-//        }
-
         if (product.isPresent()) {
-            System.out.println("onGetProduct");
+            // System.out.println("Inside onGetProduct()");
+            Color.blue("Inside onGetProduct()");
 
             // Ask the product actor for its details
             CompletionStage<ProductInfoResponse> productDetails = AskPattern.ask(
@@ -260,7 +281,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             );
 
             productDetails.thenAccept(info -> {
-                System.out.println("INSIDE");
+                // System.out.println("Inside onGetProduct() thenAccept");
+                Color.blue("Inside onGetProduct() thenAccept");
                 getProduct.replyTo.tell(new ProductInfoResponse(getContext().getSelf(),
                         info.productId, info.productName,
                         info.productDescription,
@@ -313,7 +335,9 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         Optional<ActorRef<Product.Command>> product = Optional.ofNullable(productsRef.get(updateProduct.productId));
 
         if (product.isPresent()) {
-            System.out.println("onUpdateProduct");
+            // System.out.println("onUpdateProduct");
+            Color.blue("Inside onUpdateProduct()");
+            
 
             // Ask the product actor for its details
             CompletionStage<ProductInfoResponse> productDetails = AskPattern.ask(
@@ -324,7 +348,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             );
 
             productDetails.thenAccept(info -> {
-                System.out.println("INSIDE");
+                // System.out.println("INSIDE");
+                Color.blue("Inside onUpdateProduct() thenAccept");
                 updateProduct.replyTo.tell(new ProductInfoResponse(getContext().getSelf(),
                         info.productId, info.productName,
                         info.productDescription,
@@ -403,7 +428,9 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
     }
 
     private Behavior<Command> onPlaceOrder(PlaceOrder placeOrder) throws Exception {
-//        postOrderActor.tell(new PostOrder.CreateOrder(222, placeOrder.userId, placeOrder.itemsToOrder, getContext().getSelf()));
+        // postOrderActor.tell(new PostOrder.CreateOrder(222, placeOrder.userId, placeOrder.itemsToOrder, getContext().getSelf()));
+        Color.blue("Inside onPlaceOrder() thenAccept");
+
         this.orderIdCounter += 1;
         List<Map<String, Integer>> itemsToOrder = placeOrder.itemsToOrder;
         for(var item: itemsToOrder) {
@@ -417,6 +444,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         System.out.println("_____________________________________________________");
         System.out.println(placeOrder.toJson());
         System.out.println("_____________________________________________________");
+
         CompletionStage<OrderInfo> orderInfo = AskPattern.ask(
                 postOrderActor,
                 (ActorRef<OrderInfo> replyTo) -> new PostOrder.CreateOrder(orderIdCounter, placeOrder.userId, placeOrder.itemsToOrder, replyTo),
@@ -425,7 +453,8 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         );
 
         orderInfo.thenAccept(info -> {
-            System.out.println("GOT:");
+            // System.out.println("GOT:");
+            Color.blue("Inside onPlaceOrder() thenAccept");
             try {
                 System.out.println(info.toJson());
             } catch (Exception e) {
@@ -433,6 +462,7 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
             }
             placeOrder.replyTo.tell(new OrderInfo(null, info.orderId, info.userId, info.orderStatus, info.totalPrice, info.itemsToOrder, null));
         }).exceptionally(ex -> {
+            Color.red("Exception in PostOrder.CreateOrder()");
             ex.printStackTrace();
             return null;
        });
@@ -470,4 +500,59 @@ public class Gateway extends AbstractBehavior<Gateway.Command> {
         }
 
     }
+
+    public static class GetProductRef implements Command {
+        public final Integer productId;
+        public final ActorRef<ActorRef<Product.Command>> replyTo;
+    
+        public GetProductRef(Integer productId, ActorRef<ActorRef<Product.Command>> replyTo) {
+            this.productId = productId;
+            this.replyTo = replyTo;
+        }
+    }
+    
+    private Behavior<Command> onGetProductRef(GetProductRef request) {
+        ActorRef<Product.Command> productRef = productsRef.get(request.productId);
+        if (productRef != null) {
+            request.replyTo.tell(productRef);
+        } else {
+            request.replyTo.tell(null);
+            Color.red("Product ActorRef not found for productId: " + request.productId);
+        }
+        return this;
+    }
+
+    public static class DeleteOrder implements Command {
+        public final Integer orderId;
+        public final ActorRef<OrderInfo> replyTo;
+    
+        public DeleteOrder(Integer orderId, ActorRef<OrderInfo> replyTo) {
+            this.orderId = orderId;
+            this.replyTo = replyTo;
+        }
+    }
+
+    private Behavior<Command> onDeleteOrder(DeleteOrder deleteOrder) {
+        Optional<ActorRef<Order.Command>> order = Optional.ofNullable(orderActorsRef.get(deleteOrder.orderId));
+    
+        if (order.isPresent()) {
+            Color.blue("Inside onDeleteOrder()");
+    
+            // Send DeleteOrder message to the respective order actor
+            order.get().tell(new Order.DeleteOrder(deleteOrder.orderId));
+    
+            // Remove from internal map
+            orderActorsRef.remove(deleteOrder.orderId);
+    
+            // Send response back
+            deleteOrder.replyTo.tell(new OrderInfo(null, deleteOrder.orderId, null, "DELETED", 0, null, null));
+        } else {
+            Color.red("Order not found: " + deleteOrder.orderId);
+            deleteOrder.replyTo.tell(new OrderInfo(null, -1, -1, "Not Found", 0, null, null));
+        }
+    
+        return this;
+    }
+    
+    
 }
