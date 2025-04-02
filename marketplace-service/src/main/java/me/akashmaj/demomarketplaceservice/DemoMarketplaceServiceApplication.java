@@ -45,13 +45,13 @@ public class DemoMarketplaceServiceApplication {
 
         /* launch parent actor system (NOT USED in our case) */
         ActorSystem.create(
-                DemoMarketplaceServiceApplication.create(), 
+                DemoMarketplaceServiceApplication.create(config), 
                 "DemoMarketplaceServiceApplication"
             );
 
     }
 
-    public static Behavior<Void> create() {
+    public static Behavior<Void> create(Config config) {
 
         return Behaviors.setup(context -> {
 

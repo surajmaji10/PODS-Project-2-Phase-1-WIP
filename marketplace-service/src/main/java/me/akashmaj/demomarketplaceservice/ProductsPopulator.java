@@ -7,11 +7,13 @@ import org.apache.poi.xssf.usermodel.XSSFRow;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +38,9 @@ public class ProductsPopulator {
 
     public void processExcelFile() {
 
-        try (FileInputStream fileInputStream = new FileInputStream("./src/main/resources/products.xlsx")) {
-
-            XSSFWorkbook workbook = new XSSFWorkbook(fileInputStream);
+        try (InputStream inputStream = new ClassPathResource("products.xlsx").getInputStream()) {
+            
+            XSSFWorkbook workbook = new XSSFWorkbook(inputStream);
             XSSFSheet sheet = workbook.getSheetAt(0);
 
             // skip header row

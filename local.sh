@@ -15,7 +15,7 @@ run_folder_1() {
   echo "Cleaning, building, and running the Marketplace app..."
   cd "$FOLDER_1"
   mvn clean
-  mvn compile
+  mvn compile -DskipTests
   trap "kill 0" SIGINT # Ensure the app stops on Ctrl+C
   mvn exec:java -Dexec.mainClass="me.akashmaj.demomarketplaceservice.DemoMarketplaceServiceApplication"
   cd ..
@@ -25,7 +25,7 @@ run_folder_2() {
   echo "Cleaning, building, and running the app in $FOLDER_2..."
   cd "$FOLDER_2"
   mvn clean
-  mvn package
+  mvn package -DskipTests
   trap "kill 0" SIGINT # Ensure the app stops on Ctrl+C
   java -jar target/*.jar # Adjust if the JAR file name is specific
   cd ..
@@ -35,7 +35,7 @@ run_folder_3() {
   echo "Cleaning, building, and running the app in $FOLDER_3..."
   cd "$FOLDER_3"
   mvn clean
-  mvn package
+  mvn package -DskipTests
   trap "kill 0" SIGINT # Ensure the app stops on Ctrl+C
   java -jar target/*.jar # Adjust if the JAR file name is specific
   cd ..

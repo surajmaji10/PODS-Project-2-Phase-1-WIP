@@ -2,10 +2,6 @@ package me.akashmaj.demomarketplaceservice;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
@@ -18,11 +14,27 @@ public class API {
     static RestTemplate restTemplate;
     static String accountServiceUrl;
     static String walletServiceUrl;
+    static String marketplaceServiceUrl;
 
     public API(){
         restTemplate = new RestTemplate();
+
+        // account.service.url=http://host.docker.internal:8080
+        // wallet.service.url=http://host.docker.internal:8082
+        // marketplace.service.url=http://host.docker.internal:8081
+
         accountServiceUrl = "http://localhost:8080";
         walletServiceUrl = "http://localhost:8082";
+        // marketplaceServiceUrl= "http://localhost:8085";
+
+        // accountServiceUrl = "http://host.docker.internal:8080";
+        // walletServiceUrl = "http://host.docker.internal:8082";
+        // marketplaceServiceUrl = "http://host.docker.internal:8081";
+
+        // accountServiceUrl = "http://account-service:8080";
+        // walletServiceUrl = "http://wallet-service:8080";
+        // marketplaceServiceUrl = "http://marketplace-service:8080";
+
     }
 
     static public boolean getUserDiscountById(Integer user_id, boolean discountCheck) {
