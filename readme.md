@@ -2,36 +2,7 @@
 
 ## Steps to Run the Services
 
-### Way 1: Running Locally After Downloading from GitHub
-
-#### Clone the Repository
-```
-https://github.com/surajmaji10/PODS-Project-2-Phase-1-WIP/tree/localhost-
-```
-
-#### Run the Script for Local Execution
-(Preferably run in three terminal windows, press `Ctrl+C` to kill each service)
-
-```bash
-# Start "account-service"
-./local.sh -1
-
-# Start "marketplace-service"
-./local.sh -2
-
-# Start "wallet-service"
-./local.sh -3
-```
-
-#### Access the Services
-The containers will be running locally at:
-- [http://localhost:8080/](http://localhost:8080/)
-- [http://localhost:8081/](http://localhost:8081/)
-- [http://localhost:8082/](http://localhost:8082/)
-
----
-
-### Way 2: Running Containers Using Docker
+### Way 1: Running Containers Using Docker
 
 #### Prerequisites
 Ensure Docker is installed and set up properly.
@@ -72,7 +43,7 @@ The containers are being port-forwarded to:
 
 ---
 
-### Way 3: Running Containers Using Docker After Manual Building
+### Way 2: Running Containers Using Docker After Manual Building
 
 #### Clone the Repository
 ```
