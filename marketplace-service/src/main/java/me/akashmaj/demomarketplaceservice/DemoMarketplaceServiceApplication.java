@@ -26,70 +26,59 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+
 @SpringBootApplication
 public class DemoMarketplaceServiceApplication {
 
-    /* root actor system */
+     /* root actor system */
     public static ActorSystem<Gateway.Command> system;
-    /* gateway will be the root actor */
+     /* gateway will be the root actor */
     public static ActorRef<Gateway.Command> gateway;
-    /* ask() will wait for maximum of this */
+     /* ask() will wait for maximum of this */
     static Duration askTimeout;
     /* system scheduler for actor system */
     static Scheduler scheduler;
 
     public static void main(String[] args) {
-        /* load the conf files located in resources */
+         /* load the conf files located in resources */
         Config config = ConfigFactory.load("application.conf");
-        System.out.println(config.getString("akka.actor.provider"));
 
-        /* launch parent actor system (NOT USED in our case) */
-        ActorSystem.create(
-                DemoMarketplaceServiceApplication.create(config), 
-                "DemoMarketplaceServiceApplication"
-            );
+        /* Create Actor System with cluster config */ 
+        system = ActorSystem.create(Gateway.create(), "ClusterSystem", config);
+        gateway = system;
+        askTimeout = Duration.ofSeconds(30);
+        scheduler = system.scheduler();
 
+        /* Start HTTP server on port 8081 */
+        startHttpServer();
     }
 
-    public static Behavior<Void> create(Config config) {
-
-        return Behaviors.setup(context -> {
-
-            /* creating the root actor syetem */
-            system = ActorSystem.create(Gateway.create(), "Gateway");
-            gateway = system;
-            askTimeout = Duration.ofSeconds(30);
-            scheduler = system.scheduler();
-
-            /* Creates a HTTP server that runs on localhost and listens to port 8000 */
+    private static void startHttpServer() {
+        try {
+            /* Creates a HTTP server that runs on localhost and listens to port 8081 */
             HttpServer server = HttpServer.create(new InetSocketAddress(8081), 1000);
-        
+
+            // Define handlers
             /* The "handle" method will receive each http request and respond to it */
-            MyProductsHandler myProductsHandler = new MyProductsHandler(gateway, askTimeout, scheduler);
-            server.createContext("/products", myProductsHandler);
+            server.createContext("/products", new MyProductsHandler(gateway, askTimeout, scheduler));
+            server.createContext("/orders", new MyOrdersHandler(gateway, askTimeout, scheduler));
+            server.createContext("/marketplace", new MarketplaceHandler(gateway, askTimeout, scheduler));
 
-            MyOrdersHandler myOrdersHandler = new MyOrdersHandler(gateway, askTimeout, scheduler);
-            server.createContext("/orders", myOrdersHandler);
-
-            MarketplaceHandler marketplaceHandler = new MarketplaceHandler(gateway, askTimeout, scheduler);
-            server.createContext("/marketplace", marketplaceHandler);
-
-
-            /* custom thread pool */
+            // Custom thread pool
+            /* although not needed */
             ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                8, // Core pool size (minimum number of threads)
-                16, // Maximum pool size (maximum number of threads)
-                30L, // Keep-alive time for idle threads
-                TimeUnit.SECONDS, // Time unit for keep-alive time
-                new LinkedBlockingQueue<>(1000) // Work queue for incoming requests
+                8, 16, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(1000)
             );
 
             server.setExecutor(threadPoolExecutor);
             server.start();
-            /* keep me (i.e., the root actor) alive, but  I don't want to receive messages */
-            return Behaviors.empty();
-        });
+
+            Color.green("HTTP Server started on port 8081");
+
+        } catch (IOException e) {
+            Color.red(" >>>> Exception: Could not start HTTP Server at 8081 <<<<");
+            e.printStackTrace();
+        }
     }
-
-
 }
+

@@ -19,13 +19,10 @@ public class API {
     public API(){
         restTemplate = new RestTemplate();
 
-        // account.service.url=http://host.docker.internal:8080
-        // wallet.service.url=http://host.docker.internal:8082
-        // marketplace.service.url=http://host.docker.internal:8081
 
         accountServiceUrl = "http://localhost:8080";
         walletServiceUrl = "http://localhost:8082";
-        // marketplaceServiceUrl= "http://localhost:8085";
+        marketplaceServiceUrl= "http://localhost:8081";
 
         // accountServiceUrl = "http://host.docker.internal:8080";
         // walletServiceUrl = "http://host.docker.internal:8082";
