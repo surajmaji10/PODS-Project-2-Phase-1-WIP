@@ -6,12 +6,12 @@
 set -e
 
 # Define the folders
-FOLDER_1="marketplace-service"
-FOLDER_2="account-service"
+FOLDER_2="marketplace-service"
+FOLDER_1="account-service"
 FOLDER_3="wallet-service"
 
 # Function to clean, build, and run a Spring Boot app
-run_folder_1() {
+run_folder_2() {
   echo "Cleaning, building, and running the Marketplace app..."
   cd "$FOLDER_1"
   mvn clean
@@ -21,9 +21,9 @@ run_folder_1() {
   cd ..
 }
 
-run_folder_2() {
+run_folder_1() {
   echo "Cleaning, building, and running the app in $FOLDER_2..."
-  cd "$FOLDER_2"
+  cd "$FOLDER_1"
   mvn clean
   mvn package -DskipTests
   trap "kill 0" SIGINT # Ensure the app stops on Ctrl+C
