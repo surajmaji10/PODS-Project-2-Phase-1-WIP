@@ -60,6 +60,7 @@ public class DemoMarketplaceServiceApplication {
 
             // Define handlers
             /* The "handle" method will receive each http request and respond to it */
+            server.createContext("/", new RootHandler(gateway, askTimeout, scheduler));
             server.createContext("/products", new MyProductsHandler(gateway, askTimeout, scheduler));
             server.createContext("/orders", new MyOrdersHandler(gateway, askTimeout, scheduler));
             server.createContext("/marketplace", new MarketplaceHandler(gateway, askTimeout, scheduler));
